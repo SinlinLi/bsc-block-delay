@@ -166,6 +166,80 @@ python3 bsc_block_delay.py --no-names
 
 查询失败时回退到截断的十六进制地址。
 
+---
+
+## Mempool 可见率工具
+
+`bsc_mempool_visibility.py` — 测量你的节点在区块打包前能看到多少比例的 pending 交易。
+
+### 为什么需要
+
+区块延迟告诉你区块到达有多快。Mempool 可见率告诉你**交易**到达有多快——对 MEV/HFT 来说，能在出块前看到 pending 交易至关重要。
+
+### 原理
+
+1. 在同一个 WebSocket 上订阅 `newPendingTransactions`（交易哈希）和 `newHeads`（新区块）
+2. 记录每个 pending 交易的首次出现时间
+3. 新区块到达时，通过 `eth_getBlockByNumber` 获取该区块所有交易哈希
+4. 对比：哪些区块交易之前已经在 pending 池中见过？
+
+### 指标
+
+| 指标 | 含义 |
+|------|------|
+| **可见率** | 区块交易中，出块前就在 mempool 中看到的比例 |
+| **提前量** | 可见交易在区块到达前多少 ms 被首次看到 |
+| **惊喜率** | 从未在 mempool 中出现、直接随区块到达的交易比例（私有通道/暗池） |
+| **验证者分布** | 按出块者分组的可见率统计 |
+
+### 示例输出
+
+实时区块流：
+
+```
+      Block#   Txs  Seen   Vis%      Lead   Surp  Validator          cum
+  ──────────────────────────────────────────────────────────────────────
+    87661424   133   111  83.5%   243.9ms     22  Defibit          68.0%
+    87661425   116    90  77.6%   355.5ms     26  Defibit          69.2%
+    87661426   107   100  93.5%   320.0ms      7  Defibit          71.8%
+    ...
+```
+
+分析报告：
+
+```
+========================================================================
+  BSC Mempool Visibility Report
+  266 blocks, 28977 transactions, 2min 59s
+========================================================================
+
+  Overall Visibility
+    Seen before block: 74.2% (21499 / 28977)
+    Surprise (never seen): 25.8% (7478)
+
+  Lead Time Distribution (21499 visible txs)
+    P5=19.8ms  P25=61.8ms  P50=300.4ms  P95=584.3ms
+
+  Per-Validator Visibility (21 validators)
+    Validator       Blk   Txs   Vis% Surprise% Lead(P50)
+    ───────────────────────────────────────────────────────
+    Figment          16  1791  82.2%     17.8%   320.0ms
+    MathW            16  1910  79.8%     20.2%   323.2ms
+    The48Club        16  1703  64.7%     35.3%   285.3ms
+    ...
+========================================================================
+```
+
+### 使用
+
+```bash
+python3 bsc_mempool_visibility.py [--ws URL] [--rpc URL] [--duration SEC]
+```
+
+### 注意
+
+部分 BSC 节点为了性能会关闭 `newPendingTransactions`。如果你的节点不支持，工具会警告并继续运行（可见率显示 0%）。检查 geth 的 `--txpool.*` 配置。
+
 ## 许可证
 
 MIT

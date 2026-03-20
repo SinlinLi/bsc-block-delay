@@ -198,6 +198,44 @@ Block delay tells you how fast blocks arrive. Mempool visibility tells you how f
 python3 bsc_mempool_visibility.py [--ws URL] [--rpc URL] [--duration SEC]
 ```
 
+### Sample Output
+
+Real-time block feed:
+
+```
+      Block#   Txs  Seen   Vis%      Lead   Surp  Validator          cum
+  ──────────────────────────────────────────────────────────────────────
+    87661424   133   111  83.5%   243.9ms     22  Defibit          68.0%
+    87661425   116    90  77.6%   355.5ms     26  Defibit          69.2%
+    87661426   107   100  93.5%   320.0ms      7  Defibit          71.8%
+    ...
+```
+
+Analysis report:
+
+```
+========================================================================
+  BSC Mempool Visibility Report
+  266 blocks, 28977 transactions, 2min 59s
+========================================================================
+
+  Overall Visibility
+    Seen before block: 74.2% (21499 / 28977)
+    Surprise (never seen): 25.8% (7478)
+
+  Lead Time Distribution (21499 visible txs)
+    P5=19.8ms  P25=61.8ms  P50=300.4ms  P95=584.3ms
+
+  Per-Validator Visibility (21 validators)
+    Validator       Blk   Txs   Vis% Surprise% Lead(P50)
+    ───────────────────────────────────────────────────────
+    Figment          16  1791  82.2%     17.8%   320.0ms
+    MathW            16  1910  79.8%     20.2%   323.2ms
+    The48Club        16  1703  64.7%     35.3%   285.3ms
+    ...
+========================================================================
+```
+
 ### Note
 
 Some BSC nodes disable `newPendingTransactions` for performance. If your node doesn't support it, the tool warns and continues (visibility shows 0%). Check your geth `--txpool.*` flags.
