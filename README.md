@@ -240,37 +240,6 @@ Analysis report:
 
 Some BSC nodes disable `newPendingTransactions` for performance. If your node doesn't support it, the tool warns and continues (visibility shows 0%). Check your geth `--txpool.*` flags.
 
----
-
-## Late Pending Verification Tool
-
-`verify_late_pending.py` — verifies whether your node emits `newPendingTransactions` notifications for transactions that are **already confirmed** in a block.
-
-### Why
-
-When measuring mempool visibility, a key assumption is that pending notifications arrive **before** the block. If the node sometimes emits pending events **after** the block (a "late pending"), it inflates the visibility rate — the tx was technically "seen" but only after the block arrived.
-
-This tool quantifies how often late pendings occur and measures the lag.
-
-### How It Works
-
-1. Subscribes to both `newPendingTransactions` and `newHeads` on a single WebSocket
-2. When a new block arrives, fetches its tx hashes and stores them in a confirmed set
-3. When a pending tx notification arrives, checks if the tx is already in the confirmed set
-4. If so, records it as a "late pending" with the lag (time since block arrival)
-
-### Usage
-
-```bash
-python3 verify_late_pending.py [--ws URL] [--rpc URL] [--duration SEC]
-```
-
-### Interpretation
-
-- **Late ratio ~0%**: Your pending notifications are reliable — transactions are seen before blocks
-- **Late ratio >0%**: Some pending notifications arrive after the block, which means the mempool visibility measurement slightly overstates true pre-block visibility
-- **Lag values**: How long after the block the pending notification arrived (typically sub-100ms if the race window in geth's TxPool is triggered)
-
 ## License
 
 MIT
