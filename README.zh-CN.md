@@ -240,6 +240,37 @@ python3 bsc_mempool_visibility.py [--ws URL] [--rpc URL] [--duration SEC]
 
 部分 BSC 节点为了性能会关闭 `newPendingTransactions`。如果你的节点不支持，工具会警告并继续运行（可见率显示 0%）。检查 geth 的 `--txpool.*` 配置。
 
+---
+
+## Late Pending 验证工具
+
+`verify_late_pending.py` — 验证你的节点是否会对**已经打包进区块**的交易发出 `newPendingTransactions` 通知。
+
+### 为什么需要
+
+在测量 mempool 可见率时，一个关键假设是 pending 通知在区块**之前**到达。如果节点有时在区块**之后**才发出 pending 事件（"late pending"），会虚增可见率——交易虽然技术上被"看到"了，但实际上是在出块之后。
+
+这个工具量化 late pending 的发生频率和延迟。
+
+### 原理
+
+1. 在同一个 WebSocket 上订阅 `newPendingTransactions` 和 `newHeads`
+2. 新区块到达时，获取其交易哈希并存入已确认集合
+3. 收到 pending 交易通知时，检查该交易是否已在已确认集合中
+4. 如果是，记录为 "late pending"，并计算 lag（距区块到达的时间差）
+
+### 使用
+
+```bash
+python3 verify_late_pending.py [--ws URL] [--rpc URL] [--duration SEC]
+```
+
+### 结果解读
+
+- **Late 比率 ~0%**：pending 通知可靠——交易确实在区块之前被看到
+- **Late 比率 >0%**：部分 pending 通知在区块之后才到达，说明 mempool 可见率测量会略微高估真实的出块前可见率
+- **Lag 值**：pending 通知在区块之后多久才到达（如果触发了 geth TxPool 的竞态窗口，通常在亚 100ms 级别）
+
 ## 许可证
 
 MIT
